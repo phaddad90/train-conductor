@@ -1,17 +1,24 @@
 # Train
 
 ```
-                        (  )
-                      (      )
-                        (  )
-                         ||
-                    _____||_____
-               ____|   _______  |____      ______     ______     ______
-              |  _ |  |       | |     |    |      |   |      |   |      |
-              | |_||  |  o o  | |  [] |====|  ==  |===|  ==  |===|  ==  |
-              |____|__|_______|_|_____|    |______|   |______|   |______|
-                (O)     (O)     (O) (O)      (o)(o)     (o)(o)     (o)(o)
-        =================================================================
+                            ( )     ( )
+                        (  )    (  )    (  )
+                      (    )   (    )   (    )
+                        (  )    (  )    (  )
+                            \     |     /
+                             \    |    /
+                              _|__|__|_
+                             |   ___   |
+                        _____|__|   |__|_____
+                   ____|                     |____
+              ____|     ___________________      |____
+             |  _ |    |  o   o   o   o    |     |     |____     ______     ______
+             | (_)|    |___________________|     | [#] |    |   |      |   |      |
+             |____|_____|                 |______|     |    |===|  ..  |===|  ..  |
+             |__________|  T H E   T R A I N  |________|====|   |______|   |______|
+                (O)   (O)      (O)      (O)   (O)   (O)       (o)(o)       (o)(o)
+       =============================================================================
+        ||   ||   ||   ||   ||   ||   ||   ||   ||   ||   ||   ||   ||   ||   ||
 ```
 
 A method for running coding agents in parallel on one repository without them
@@ -313,6 +320,45 @@ chase it upward.
 
 **Rework across trains should sit at zero.** If it does not, the gate is the
 problem, not the parallelism.
+
+### What it costs
+
+The intuition is that this burns far more tokens than working normally. One
+repository's actual accounting says otherwise, and the shape of the answer is
+more interesting than the size.
+
+Mean tokens per active day, conductor and carriages combined, comparing 52
+active days before adoption against 10 after:
+
+| | Before | After | |
+|---|---|---|---|
+| Output tokens | 1,678,576 | 1,452,048 | **down 13%** |
+| ...of which the conductor | 1,376,005 | 587,953 | down 57% |
+| ...of which the carriages | 302,571 | 863,860 | up 186% |
+| Cache writes | 15,561,044 | 30,876,627 | **up 98%** |
+| Weighted total (indicative) | - | - | **up ~23%** |
+
+Generation got **cheaper**, not more expensive. A carriage with a predicted file
+set does not read the whole repository to work out where to start, and that
+exploration was the largest single line of the old bill. The conductor's own
+spend more than halved because it stopped building and stopped authoring.
+
+The overhead is real but it is somewhere unintuitive: **context priming.** Cache
+writes roughly doubled, because N carriages each need their own context
+established rather than one long-running agent amortising a single context all
+day. That is what pushes the weighted total up by roughly a quarter, and it is
+the honest cost of the method.
+
+So: budget around 20 to 25% more, not 2x or 3x. And weigh it against what the
+same accounting shows on the other side - rework attributable to a previous
+train measured at zero every time, and zero reverts across the whole period.
+Rework is pure re-spend, and one repo's pre-adoption baseline had roughly a
+third of all commits classified as fixes.
+
+**Caveats, because this is one measurement and not a study.** Ten post-adoption
+days against fifty-two before. One repository. The price weighting is indicative
+rather than a real invoice. The work mix changed at the same time, so this is
+not a controlled comparison. Measure your own before believing any of it.
 
 ---
 
