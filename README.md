@@ -54,6 +54,8 @@ is already built.
 
 ## Contents
 
+- [Why this exists](#why-this-exists)
+- [How this compares to Devin and similar platforms](#how-this-compares-to-devin-and-similar-platforms)
 - [The problem it solves](#the-problem-it-solves)
 - [Is this for you?](#is-this-for-you)
 - [What your repo needs first](#what-your-repo-needs-first)
@@ -67,6 +69,99 @@ is already built.
 - [Common questions](#common-questions)
 - [What it is not](#what-it-is-not)
 - [Further reading](#further-reading)
+
+---
+
+## Why this exists
+
+It started with a wrong hypothesis, and the correction is the interesting part.
+
+One operator, several codebases, and coding agents that were each individually
+capable of good work. The constraint was never how good any single agent was. It
+was that running more than one of them produced collisions, and that checking
+what they reported back consumed exactly the attention that was supposed to be
+freed up.
+
+**The original hypothesis was simple: if agents can run in parallel without
+colliding, throughput goes up.** That turned out to be the easy half. Git
+worktrees solved collisions in an afternoon, the shared test database took a day
+after that, and then the throughput gain arrived roughly as expected.
+
+**What did not go away was the operator.** With several agents running, the
+bottleneck moved to reading what came back and deciding whether to believe it.
+An agent would state a cause it had never measured. A count would turn out to be
+recalled rather than derived. A subagent's finding would get repeated by its
+parent with the uncertainty stripped out, land in a document, and be discovered
+two days later. None of that is a concurrency problem, and no amount of
+isolation touches it.
+
+So the method grew a second half nobody planned: **an evidence protocol.** Every
+number carries the command that produced it. Absolutes require a population-wide
+check. A figure not re-derived in-session is treated as recall. Any claim the
+conclusion leans on gets a deliberate attempt to falsify it. That half turned out
+to matter more than the parallelism.
+
+Then a third problem surfaced. Lessons were being written down and never
+enforced, so the same class recurred. One repository held 47 recorded lessons
+with almost no guards, and one of those lessons described itself as the third
+instance. That produced the retro loop and the rule that a lesson is not closed
+until it has a guard or a written reason none is possible.
+
+The measured outcome after fourteen batches across two codebases: throughput held,
+rework attributable to a previous batch sat at zero every time it was measured,
+and there were no reverts. **The velocity gain was real but modest. The
+correctness gain was large, and the operator stopped being the verification
+layer** - which was the actual constraint all along, just not the one anyone set
+out to fix.
+
+---
+
+## How this compares to Devin and similar platforms
+
+Worth being straight about, because the shape is genuinely similar.
+
+From public descriptions, Cognition shipped parallel Devin sessions in early
+2026 and then Managed Devins, where one session acts as a coordinator, breaks
+work into pieces, delegates to child sessions each running in its own isolated
+VM, monitors them, resolves conflicts and compiles the results into pull
+requests. That is the same topology described here: a conductor, carriages,
+isolated tracks, integration at the end. Anyone claiming to have invented that
+shape is not paying attention. ([overview](https://www.marktechpost.com/2026/06/10/ai-coding-agents-development-platforms-2026/),
+[orchestration](https://aidevsetup.com/insider/devin-agents-can-now-orchestrate-other-devins-what-it-means))
+
+**Where the platforms are straightforwardly better.** A full VM per child is
+stronger isolation than a git worktree, and it removes the shared-substrate
+problem by brute force rather than by auditing for it. They are managed, so
+there is no setup and no substrate diagnostic to run. They handle browser use,
+team features, session replay and support. They scale past what one machine and
+one operator's attention can hold.
+
+**Where this is different, and it is one axis, not many.** These are platforms;
+this is a method. It is a markdown file you drop into a skills directory, it runs
+on the setup you already have, and you own it. More importantly, the layer it
+adds is verification rather than orchestration:
+
+- A carriage must prove its own new tests **can fail** before the suite runs, by
+  reverting its fix and showing the test go red. Unfalsifiable tests were the
+  single largest defect class measured here, and running your suite in a cleaner
+  VM does not make a test that cannot fail able to fail.
+- Every claim in a report carries the command that produced it, and absolutes
+  require a population-wide check. Better isolation does not stop an agent
+  asserting an unmeasured cause.
+- A finding that recurs three times becomes an enforcement mechanism, and a
+  lesson is not closed until it has one. Accumulated agent memory is not the same
+  thing as accumulated enforcement.
+
+**The honest summary is that these compose rather than compete.** The failure
+modes instrumented here are agent-behaviour problems, not infrastructure
+problems, and nothing about them depends on where the agent executes. If you are
+already running a platform that gives you isolated agents and pull requests, take
+the verification half and leave the orchestration half alone - it is the part
+you are missing, and the part no sandbox provides.
+
+One caveat on all of the above: this comparison is drawn from public
+descriptions rather than from having run these platforms side by side against
+the same backlog. Nobody has done that measurement, including me.
 
 ---
 
