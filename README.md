@@ -1,25 +1,6 @@
 # Train
 
-```
-                            ( )     ( )
-                        (  )    (  )    (  )
-                      (    )   (    )   (    )
-                        (  )    (  )    (  )
-                            \     |     /
-                             \    |    /
-                              _|__|__|_
-                             |   ___   |
-                        _____|__|   |__|_____
-                   ____|                     |____
-              ____|     ___________________      |____
-             |  _ |    |  o   o   o   o    |     |     |____     ______     ______
-             | (_)|    |___________________|     | [#] |    |   |      |   |      |
-             |____|_____|                 |______|     |    |===|  ..  |===|  ..  |
-             |__________|  T H E   T R A I N  |________|====|   |______|   |______|
-                (O)   (O)      (O)      (O)   (O)   (O)       (o)(o)       (o)(o)
-       =============================================================================
-        ||   ||   ||   ||   ||   ||   ||   ||   ||   ||   ||   ||   ||   ||   ||
-```
+![A steam locomotive pulling three carriages, drawn as a phosphor-green engineering blueprint on black](assets/social-preview.png)
 
 A method for running coding agents in parallel on one repository without them
 colliding, and for making what they tell you checkable.
@@ -43,6 +24,27 @@ find it easier to hold that way.
 | **The carriages** | The subagents. One per ticket, each on its own track, coupled only at the end. |
 | **The track** | The isolated branch and worktree a carriage runs on until integration. |
 | **The gate** | The inspection every carriage passes on its own before it is allowed to couple. |
+
+```
+                            ( )     ( )
+                        (  )    (  )    (  )
+                      (    )   (    )   (    )
+                        (  )    (  )    (  )
+                            \     |     /
+                             \    |    /
+                              _|__|__|_
+                             |   ___   |
+                        _____|__|   |__|_____
+                   ____|                     |____
+              ____|     ___________________      |____
+             |  _ |    |  o   o   o   o    |     |     |____     ______     ______
+             | (_)|    |___________________|     | [#] |    |   |      |   |      |
+             |____|_____|                 |______|     |    |===|  ..  |===|  ..  |
+             |__________|      conductor      |________|====|   |______|   |______|
+                (O)   (O)      (O)      (O)   (O)   (O)       (o)(o)       (o)(o)
+       =============================================================================
+        ||   ||   ||   ||   ||   ||   ||   ||   ||   ||   ||   ||   ||   ||   ||
+```
 
 The load-bearing part of the metaphor is that carriages couple **once, at the
 end**, and the train leaves as a unit. Nothing ships carriage by carriage, and

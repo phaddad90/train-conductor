@@ -1,9 +1,9 @@
 # assets
 
-`social-preview.png` (1280x640) is the GitHub social preview: the card rendered
+`social-preview.png` (1280x640) is the GitHub social preview and the README header: the card rendered
 whenever the repo URL is pasted into X, LinkedIn, Slack, Discord or iMessage.
-`social-preview-alt.png` is a darker alternative with more empty space in the
-upper third, useful if a title is ever overlaid.
+`social-preview-alt.png` is a brighter variant with a stronger grid, which holds
+up better at very small sizes.
 
 GitHub does not expose social preview via its API, so upload it manually at
 Settings > General > Social preview.
