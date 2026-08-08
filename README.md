@@ -1,10 +1,47 @@
 # Train
 
+```
+                        (  )
+                      (      )
+                        (  )
+                         ||
+                    _____||_____
+               ____|   _______  |____      ______     ______     ______
+              |  _ |  |       | |     |    |      |   |      |   |      |
+              | |_||  |  o o  | |  [] |====|  ==  |===|  ==  |===|  ==  |
+              |____|__|_______|_|_____|    |______|   |______|   |______|
+                (O)     (O)     (O) (O)      (o)(o)     (o)(o)     (o)(o)
+        =================================================================
+```
+
 A method for running coding agents in parallel on one repository without them
 colliding, and for making what they tell you checkable.
 
 It ships as a Claude Code skill (`skills/train/`), but most of it is discipline
 rather than automation. The rules below hold whatever agent runtime you use.
+
+---
+
+## The metaphor, if it helps
+
+The name is not decoration. The whole method maps onto a train, and most people
+find it easier to hold that way.
+
+| Rail | Here |
+|---|---|
+| **The train** | One batch of work, planned, run and shipped as a single unit. |
+| **The conductor** | The lead agent. Plans the manifest, dispatches, integrates, ships. Never drives a carriage itself. |
+| **The manifest** | The plan. What is aboard, which carriage carries it, in what order, and what each is allowed to touch. |
+| **The tickets** | The work items. Each is a passenger with a seat reserved before departure, not one who wanders on later. |
+| **The carriages** | The subagents. One per ticket, each on its own track, coupled only at the end. |
+| **The track** | The isolated branch and worktree a carriage runs on until integration. |
+| **The gate** | The inspection every carriage passes on its own before it is allowed to couple. |
+
+The load-bearing part of the metaphor is that carriages couple **once, at the
+end**, and the train leaves as a unit. Nothing ships carriage by carriage, and
+nothing couples that has not passed inspection alone. When a carriage fails
+inspection it is uncoupled and left behind rather than dragged along because it
+is already built.
 
 ---
 

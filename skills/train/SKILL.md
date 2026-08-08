@@ -62,10 +62,10 @@ comment.
 
 ```
 git log --since="90 days ago" --no-merges --name-only --pretty=format: \
-  | grep -v '^$' | sort | uniq -c | sort -rn | head -20 # hotspots
-git log --since="90 days ago" --oneline --no-merges | wc -l # denominator
-git branch --list; git worktree list # in-flight state
-git status --porcelain # dirty tree
+  | grep -v '^$' | sort | uniq -c | sort -rn | head -20     # hotspots
+git log --since="90 days ago" --oneline --no-merges | wc -l  # denominator
+git branch --list; git worktree list                         # in-flight state
+git status --porcelain                                       # dirty tree
 ```
 
 Hotspot share = count / denominator. Anything above ~5% of commits is a
@@ -80,7 +80,35 @@ happen.
 ## 2. Decompose - the step most often skipped, and where rework comes from
 
 Produce the train manifest before any dispatch: per item, the predicted file
-set, hotspots claimed, migration slot, dependencies.
+set, hotspots claimed, migration slot, dependencies, and its **blast radius** -
+whether being wrong here costs money, data, access, or an irreversible external
+effect. Most items are cheap to get wrong; the few that are not should be
+visible at manifest time, not discovered at review.
+
+- **Below about three items, it is not a train.** One urgent fix runs solo (§7);
+  two items in a shared tree cost less than the manifest, the worktrees and the
+  integration. The ceremony has to be earning something.
+- **What makes a correct slice is not its size.** A slice is right when its
+  predicted file set is disjoint from its siblings AND its acceptance evidence is
+  self-contained - provable without waiting for another stream to land. Size
+  (~30 min) is a consequence of getting those two right, not the criterion. A
+  slice that needs a sibling's work to demonstrate itself is one stream, not two.
+- **Predict the file set from co-change history, not from the ticket.** The
+  ticket says what to change; §1's ranking says what historically gets changed
+  with it. A prediction drawn from reading the ticket alone systematically misses
+  the test file, the fixture, the registry entry and the doc that always move
+  together, and those misses are what spend the +2 allowance.
+- **Dispatch order is not manifest order.** Enforcement mechanisms go first
+  (they bind everyone). Then longest-pole first, then descending, because the
+  train's wall clock is its slowest chain and starting that last idles it.
+  High-blast-radius items go early too, so a failure surfaces while there is
+  still time to react rather than at integration. The concurrency cap is the
+  LOWER of the substrate limit and what the integrator can actually read: N
+  streams times a report is a context budget, and that ceiling usually arrives
+  first.
+- **Dropping a stream mid-train is normal.** If an item turns out wrong, pull it
+  from the merge, let teardown delete its branch, and return it to the backlog.
+  Do not carry a doubtful stream into integration because it is already built.
 
 - **Hotspots co-queue, they do not exclude.** Two items touching the same
   hotspot belong in the SAME train, dispatched sequentially inside it - the
@@ -164,19 +192,19 @@ set, hotspots claimed, migration slot, dependencies.
   JUDGEMENT, and judgement errors propagate with full authority because streams
   comply exactly. Three mechanical checks, costing minutes:
   1. **Every predicted file exists**, or is explicitly marked to-be-created.
-  `git ls-tree -r HEAD --name-only | grep -f predicted` takes a second.
-  Observed: a stream dispatched against an asset directory that was not in the
-  repo at all - it arrived with a later phase's handoff - and halted correctly
-  having cost a full dispatch.
+     `git ls-tree -r HEAD --name-only | grep -f predicted` takes a second.
+     Observed: a stream dispatched against an asset directory that was not in the
+     repo at all - it arrived with a later phase's handoff - and halted correctly
+     having cost a full dispatch.
   2. **Every acceptance criterion names the mutation AND the failure it must
-  produce.** A criterion that cannot be falsified is not a criterion. Observed:
-  "all six tests must go red" was impossible for one of the six, and a
-  compliant stream would have contorted a correct test to satisfy it.
+     produce.** A criterion that cannot be falsified is not a criterion. Observed:
+     "all six tests must go red" was impossible for one of the six, and a
+     compliant stream would have contorted a correct test to satisfy it.
   3. **Every figure is a median of >=5 runs with min and max, or is labelled
-  UNVERIFIED.** A single sample may raise a question; it may never settle one.
-  Observed: one timing sample taken on a machine that was compiling was 7x
-  wrong and nearly bought an unnecessary optimisation programme. The method
-  manufactures that contention itself by running N streams on one box.
+     UNVERIFIED.** A single sample may raise a question; it may never settle one.
+     Observed: one timing sample taken on a machine that was compiling was 7x
+     wrong and nearly bought an unnecessary optimisation programme. The method
+     manufactures that contention itself by running N streams on one box.
 - Show the operator the manifest with its ledger. Do not wait for approval
   unless a hotspot claim is contested or an item needs an operator input.
 
@@ -260,39 +288,39 @@ line is the enforcement and `.train/config.md` names the path.
   from that one rule, and every one of them was learned the hard way -
 
   - *Walk the named classes* in the diff. Declaring them beforehand is what
-  makes "QA caught it" falsifiable after.
+    makes "QA caught it" falsifiable after.
   - *Mutation-check* that new tests fail without the fix, scoped to the tests
-  the stream added - **and verify the mutation LANDED before its result
-  counts**: re-read the value, re-import the module, check the diff. A probe
-  that silently no-ops (an edit landing in a docstring instead of a table
-  value, a patch applied to a copy) reads as "fix confirmed" and once nearly
-  closed a real finding. **Commit before mutating** - reverting with a
-  working-tree checkout against uncommitted changes destroys the FIX rather
-  than the mutation, observed twice in one sitting.
+    the stream added - **and verify the mutation LANDED before its result
+    counts**: re-read the value, re-import the module, check the diff. A probe
+    that silently no-ops (an edit landing in a docstring instead of a table
+    value, a patch applied to a copy) reads as "fix confirmed" and once nearly
+    closed a real finding. **Commit before mutating** - reverting with a
+    working-tree checkout against uncommitted changes destroys the FIX rather
+    than the mutation, observed twice in one sitting.
   - *Mutation proves a test CAN fail. It does not prove the test fails for the
-  REASON CLAIMED*, and that gap has let two defects through. Assert the
-  **expected failure**, not merely a failure. Two mechanical halves:
-  - **Proof of arrival.** A test must demonstrate it reached the code it
-  claims to exercise. If it can pass without the function under test being
-  entered, it is testing something else. Observed: a test failed under
-  mutation because a validation layer IN FRONT of the target refused the
-  input, so the target was never entered - it was exercising the guard in
-  front of the guard.
-  - **Failure specificity.** Assert the reason, never a substring that a
-  generic or default message also contains. Observed: a permanent guard kept
-  passing because a different error message happened to contain the asserted
-  substring, so the guard survived the thing it documented being removed.
-  - The same applies one level up to any test justified as "this proves we
-  chose X over Y": ask what it would report if Y were implemented. If the
-  answer is "the same", it never entered the discriminating region and is
-  decoration. Observed: 2 of 3 tests passed against the rejected
-  implementation until one asserted it had entered that region.
+    REASON CLAIMED*, and that gap has let two defects through. Assert the
+    **expected failure**, not merely a failure. Two mechanical halves:
+    - **Proof of arrival.** A test must demonstrate it reached the code it
+      claims to exercise. If it can pass without the function under test being
+      entered, it is testing something else. Observed: a test failed under
+      mutation because a validation layer IN FRONT of the target refused the
+      input, so the target was never entered - it was exercising the guard in
+      front of the guard.
+    - **Failure specificity.** Assert the reason, never a substring that a
+      generic or default message also contains. Observed: a permanent guard kept
+      passing because a different error message happened to contain the asserted
+      substring, so the guard survived the thing it documented being removed.
+    - The same applies one level up to any test justified as "this proves we
+      chose X over Y": ask what it would report if Y were implemented. If the
+      answer is "the same", it never entered the discriminating region and is
+      decoration. Observed: 2 of 3 tests passed against the rejected
+      implementation until one asserted it had entered that region.
   - *Rehearse data migrations by EXECUTING them* against a scratch database
-  built at the pre-merge head. A read-only SELECT proves which rows would be
-  selected, never that the migration runs - driver type-binding, transaction
-  semantics and the migration's own code are only exercised by running it.
-  Production-shaped data where a backup restore is available; an empty schema
-  proves syntax, not behaviour.
+    built at the pre-merge head. A read-only SELECT proves which rows would be
+    selected, never that the migration runs - driver type-binding, transaction
+    semantics and the migration's own code are only exercised by running it.
+    Production-shaped data where a backup restore is available; an empty schema
+    proves syntax, not behaviour.
 
   Then: run A4 against the stream's ledger, and hunt the absence cases.
 - For claims of the class that keeps failing (absolutes), prefer 2-3 verifiers

@@ -18,7 +18,7 @@ write a config without a completed diagnostic.**
 
 ```
 git status --porcelain; git branch --list; git worktree list
-git log --all --not --remotes --oneline | head # unpushed work
+git log --all --not --remotes --oneline | head        # unpushed work
 ```
 
 Land or explicitly park everything in flight. Report any branch that is >20
@@ -47,44 +47,44 @@ with its number.
 **Concurrency blockers - be adversarial, assume parallel work fails:**
 
 1. *Shared mutable resources - enumerate them all at once.* Not just what the
-  tests touch: every fixed, mutable thing ANY stream command can reach. Test
-  databases and ports, template/seed DBs, the shared dev or staging database a
-  `migrate` would stamp, cache dirs, fixed file paths, named containers,
-  singleton tools with session state (browser, REPL, tmux pane). Produce ONE
-  list and mark each entry per-stream-isolated or integrator-owned - **and
-  state the SCOPE at which each is isolated.** "Isolated per worktree" is not
-  "isolated per test file": a path resolved from `__dirname` is genuinely
-  unique per stream while still being shared by every test file inside one
-  gate run, so a drop-and-recreate in one file destroys another's fixtures
-  mid-run and surfaces as flakiness rather than collision. Check across
-  streams AND within a single gate run; the right answer at the wrong scope
-  reads as a clean bill of health. Scoping
-  this question to "the tests" is how three separate shared-resource
-  collisions get discovered as three separate incidents instead of one
-  enumeration. Grep the test config and harness for hardcoded ports, DB
-  names, and any drop-and-recreate guarded by process-local state. **This is
-  usually the real ceiling, not the git tree.** Check whether CI already
-  parameterises it - if CI runs the same suite against different infrastructure
-  via env vars, that seam is your per-stream isolation and it is free.
+   tests touch: every fixed, mutable thing ANY stream command can reach. Test
+   databases and ports, template/seed DBs, the shared dev or staging database a
+   `migrate` would stamp, cache dirs, fixed file paths, named containers,
+   singleton tools with session state (browser, REPL, tmux pane). Produce ONE
+   list and mark each entry per-stream-isolated or integrator-owned - **and
+   state the SCOPE at which each is isolated.** "Isolated per worktree" is not
+   "isolated per test file": a path resolved from `__dirname` is genuinely
+   unique per stream while still being shared by every test file inside one
+   gate run, so a drop-and-recreate in one file destroys another's fixtures
+   mid-run and surfaces as flakiness rather than collision. Check across
+   streams AND within a single gate run; the right answer at the wrong scope
+   reads as a clean bill of health. Scoping
+   this question to "the tests" is how three separate shared-resource
+   collisions get discovered as three separate incidents instead of one
+   enumeration. Grep the test config and harness for hardcoded ports, DB
+   names, and any drop-and-recreate guarded by process-local state. **This is
+   usually the real ceiling, not the git tree.** Check whether CI already
+   parameterises it - if CI runs the same suite against different infrastructure
+   via env vars, that seam is your per-stream isolation and it is free.
 2. *CI triggers and runner count.* What refs trigger a run? Is the concurrency
-  group per-ref (queues) or global (cancels)? How many runners? Five parallel
-  branches on one runner is a queue, not parallelism.
+   group per-ref (queues) or global (cancels)? How many runners? Five parallel
+   branches on one runner is a queue, not parallelism.
 3. *Sequence-numbered artifacts.* Migrations, ordered fixtures, numbered configs
-  - anything where two branches picking a number collide. What catches it and
-  what does recovery cost?
+   - anything where two branches picking a number collide. What catches it and
+   what does recovery cost?
 4. *Files nearly every batch touches.* From §1 of SKILL.md. Separate authored
-  from generated - generated files must never be merged, only regenerated.
+   from generated - generated files must never be merged, only regenerated.
 5. *Order- or network-dependent checks* unsafe to run concurrently.
 6. *Does the gate actually RUN?* Execute it. Do not read it off package.json,
-  a Makefile or CI config and assume. A gate can be written and never have
-  worked - exiting non-zero on a workspace-resolution error, or exiting ZERO
-  having executed nothing, while a suite of real tests sits unreachable from
-  the build graph. Record the baseline pass/fail counts from the actual run.
-  **A gate that does not run, or a red baseline, is a blocking prerequisite** -
-  every later claim in this method rests on "the stream proved itself with the
-  gate", and that sentence is worthless if the gate is decorative. Same lesson
-  as rehearsing a migration by executing it: reading proves intent, not
-  behaviour.
+   a Makefile or CI config and assume. A gate can be written and never have
+   worked - exiting non-zero on a workspace-resolution error, or exiting ZERO
+   having executed nothing, while a suite of real tests sits unreachable from
+   the build graph. Record the baseline pass/fail counts from the actual run.
+   **A gate that does not run, or a red baseline, is a blocking prerequisite** -
+   every later claim in this method rests on "the stream proved itself with the
+   gate", and that sentence is worthless if the gate is decorative. Same lesson
+   as rehearsing a migration by executing it: reading proves intent, not
+   behaviour.
 
 **Lessons corpus, if one exists** - a postmortem log, bug-lessons table or
 incident wiki. Audit it for GUARD COVERAGE: how many recorded lessons have an
@@ -124,7 +124,7 @@ if a `git log` one-liner produces it, it does not go in the file.
 Diagnosed <date>. Re-run `/train init` when CI, test harness or deploy changes.
 
 ## Gate - EXECUTED during diagnosis, never read off package.json/Makefile
-exact-command-here # the one the stream runs; must match CI's invocation
+exact-command-here            # the one the stream runs; must match CI's invocation
 lint: ...
 baseline: <pass/fail counts, pasted from the actual run>
 Do NOT also run: <redundant suites already covered by the gate>
@@ -132,12 +132,12 @@ Do NOT also run: <redundant suites already covered by the gate>
 ## Test isolation
 mechanism: <per-stream ports | namespaced DBs | none needed | BLOCKED>
 handles: <the env vars or ports allocated per stream>
-max concurrent streams: <n> # and the constraint that caps it
+max concurrent streams: <n>  # and the constraint that caps it
 
 ## CI
 triggers: <refs>
 runners: <n, hosted or self-hosted>
-stream branches push to origin: <yes/no> # no, unless runners are elastic
+stream branches push to origin: <yes/no>   # no, unless runners are elastic
 
 ## Sequence-numbered artifacts
 <migrations dir, allocation rule, what catches a collision>
@@ -145,19 +145,19 @@ stream branches push to origin: <yes/no> # no, unless runners are elastic
 ## Integrator-owned - never merged; regenerated or restamped once on the merged tree
 <generated paths + the command that regenerates them>
 <mechanical stamps every stream would otherwise touch for reasons unrelated to
-  its change: version counters, build numbers, changelog headers. A stamp bumped
-  per-commit by convention looks like the repo's worst hotspot and is not one.>
+ its change: version counters, build numbers, changelog headers. A stamp bumped
+ per-commit by convention looks like the repo's worst hotspot and is not one.>
 
 ## Hotspots requiring co-queueing
 <top files by commit share, with the share; refresh at §1 each train>
 
 ## Pre-ship questions
 <the repo's own checklist the Stream Report must answer, DERIVED from its own
-  lessons and rework history - never borrowed from another repo, whose bugs are
-  a different species. Shape it as class-level QUESTIONS with concrete tells
-  nested underneath, not a flat list of specifics: a flat list accumulates past
-  twenty items and stops being read, while a question with tells under it stays
-  one page. Two repos arrived at this shape independently.>
+ lessons and rework history - never borrowed from another repo, whose bugs are
+ a different species. Shape it as class-level QUESTIONS with concrete tells
+ nested underneath, not a flat list of specifics: a flat list accumulates past
+ twenty items and stops being read, while a question with tells under it stays
+ one page. Two repos arrived at this shape independently.>
 
 ## Deploy
 <exact invocation, gates, timing constraints>
