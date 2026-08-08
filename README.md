@@ -64,6 +64,7 @@ is already built.
 - [Files it creates](#files-it-creates)
 - [Honest expectations](#honest-expectations)
 - [Objections you will have](#objections-you-will-have)
+- [Common questions](#common-questions)
 - [What it is not](#what-it-is-not)
 - [Further reading](#further-reading)
 
@@ -416,6 +417,57 @@ which files are hotspots and why, what the test substrate actually shares, what
 its own bug history says its failure classes are. The method supplies the
 questions. Your repo supplies every answer, and borrowing another repo's answers
 is the one shortcut guaranteed not to work.
+
+---
+
+## Common questions
+
+**How do I run multiple Claude Code agents in parallel on the same repository?**
+Give each one its own git worktree and branch, never the shared checkout, and
+have each verify its base commit before editing. That removes file collisions.
+Then find what they still share: a test database, a fixed port, a browser
+session, a hoisted `node_modules`. That shared substrate, not git, is the real
+ceiling on how many can run at once.
+
+**Why do my AI agents keep conflicting in git?**
+Because they are editing one working tree. Two agents in one checkout produce
+commingled commits, reset stomps and branch-switch propagation. Worktrees fix it
+structurally in an afternoon; discipline alone does not, and leaks.
+
+**How many coding agents can I run at once?**
+The lower of two numbers: what your test substrate can isolate, and what your
+orchestrating agent can actually read. The second usually binds first, because N
+agents times a report is a context budget.
+
+**How do I stop an AI agent from claiming something it did not verify?**
+Require every number to carry the command that produced it and the output
+containing it, ban absolute quantifiers without a population-wide command, and
+treat any figure not re-derived in-session as recall rather than measurement. A
+hedge on a countable quantity ("4,600+", "roughly") is the reliable tell.
+
+**Why do agent-written tests pass when the code is broken?**
+Because a test written alongside its fix is rarely proven able to fail. One
+measurement found unfalsifiable tests to be the single largest defect class:
+nine or more instances across seven parallel agents in one batch. The fix is for
+the agent to revert its own change and show the test going red before the suite
+runs.
+
+**Is this a merge queue?**
+No. A merge queue serialises integration on your CI. This batches work, isolates
+each piece, verifies each alone, then integrates and ships once. If you already
+run a merge queue you have the integration half and should take the verification
+half only.
+
+**Does it only work with Claude Code?**
+It ships as a Claude Code skill, and that is the fastest way to adopt it. The
+method itself is a set of rules about isolation, verification and evidence, and
+nothing in it depends on a particular agent runtime.
+
+**What does it cost in tokens?**
+Roughly 20 to 25% more on a weighted basis in the one repository that was
+measured, and the shape is counterintuitive: output generation fell 13% because
+briefed agents stop exploring, while cache writes doubled because each agent
+primes its own context. See [What it costs](#what-it-costs).
 
 ---
 
