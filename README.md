@@ -1,38 +1,58 @@
 # Train
 
 A method for running coding agents in parallel on one repository without them
-colliding, and for making their claims checkable.
+colliding, and for making what they tell you checkable.
 
-It is packaged as a Claude Code skill (`skills/train/`), but the method is
-tool-agnostic — most of it is discipline, not automation.
+It ships as a Claude Code skill (`skills/train/`), but most of it is discipline
+rather than automation. The rules below hold whatever agent runtime you use.
+
+---
+
+## Contents
+
+- [The problem it solves](#the-problem-it-solves)
+- [Is this for you?](#is-this-for-you)
+- [What your repo needs first](#what-your-repo-needs-first)
+- [Installing](#installing)
+- [The three commands](#the-three-commands)
+- [What a train actually looks like](#what-a-train-actually-looks-like)
+- [The three layers](#the-three-layers)
+- [Files it creates](#files-it-creates)
+- [Honest expectations](#honest-expectations)
+- [Objections you will have](#objections-you-will-have)
+- [What it is not](#what-it-is-not)
+- [Further reading](#further-reading)
 
 ---
 
 ## The problem it solves
 
-Running several coding agents on one codebase fails in three ways, in this
-order:
+Running several coding agents on one codebase fails in three ways, and they
+arrive in this order.
 
-1. **They collide.** Two agents editing one working tree produce commingled
-   commits, reset stomps, and lost work. Worktrees fix that in an afternoon —
-   and then you discover the real ceiling is *shared test substrate*: one
-   template database, one fixed port, one browser session, one hoisted
-   `node_modules`. In one adoption, two concurrent test runs against a shared
-   template DB produced 37 unexplained failures that read as flakiness.
+**First, they collide.** Two agents editing one working tree produce commingled
+commits, reset stomps, branch-switch propagation and lost work. Git worktrees fix
+that in an afternoon. Then you discover the real ceiling is shared *test*
+substrate: one template database, one fixed port, one browser session, one
+hoisted `node_modules`. In one adoption, two concurrent test runs against a
+shared template database produced 37 unexplained failures that read as flakiness
+rather than as a collision, because the harness dropped and rebuilt the template
+under a process-local guard.
 
-2. **They assert things that aren't true.** An agent states a cause it never
-   measured, a count it recalled rather than derived, or an absolute quantifier
-   from a twenty-line sample. Subagent output gets laundered into confident
-   prose. You end up being the verification layer, which does not scale.
+**Second, they assert things that are not true.** An agent states a cause it
+never measured, a count it recalled rather than derived, or an absolute
+quantifier drawn from a twenty-line sample. Subagent output gets laundered into
+confident prose and lands in a document. You end up being the verification layer
+yourself, which does not scale past one repo and one attention span.
 
-3. **Nothing compounds.** Lessons get recorded and not enforced. In one
-   adoption, a repository had 47 written lessons and almost no guards — one of
-   them literally said *"third-and-counting instance"* of a class the repo had
-   already documented twice.
+**Third, nothing compounds.** Lessons get recorded and never enforced. One
+repository audited during this work held 47 written lessons and almost no
+guards. One of those lessons said, in its own text, "third-and-counting
+instance" of a class the repo had already documented twice.
 
-Train addresses all three: worktree isolation and a substrate audit for the
-first, an evidence protocol for the second, and a retro loop that converts
-lessons into enforcement for the third.
+Train addresses all three. Worktree isolation plus a substrate audit for the
+first. An evidence protocol for the second. A retro loop that converts lessons
+into enforcement for the third.
 
 ---
 
@@ -40,51 +60,149 @@ lessons into enforcement for the third.
 
 **Good fit**
 
-- One person (or a small team) directing several coding agents on a repo.
+- One person, or a small team, directing several coding agents on a repo.
 - You already have a test suite and a way to ship.
-- Work arrives in batches — a handful of fixes and features at a time.
+- Work arrives in batches: a handful of fixes and features at a time.
 - You have been burned by an agent confidently reporting something wrong.
 
 **Poor fit**
 
 - A large human team with an existing merge queue and code-review culture. You
-  have most of this already, in a form tuned to humans.
-- A repo with no tests and no gate. Train's foundation is *"the stream proved
-  itself with the gate"* — with no gate, that sentence is worthless. Build one
-  first; `init` will refuse to proceed without it.
-- One-off scripts and throwaway prototypes. The ceremony costs more than it
-  returns below roughly three items of work.
+  already have most of this, in a form tuned to humans rather than agents.
+- A repo with no tests and no gate. The foundation of the method is the sentence
+  "the stream proved itself with the gate", and with no gate that sentence is
+  worthless. Build one first. `init` will refuse to proceed without it.
+- One-off scripts and throwaway prototypes. Below roughly three items of work the
+  ceremony costs more than it returns.
 
 **Partial fit, and worth knowing about**
 
-Much of the value is available at **N=1**. A single stream with a predicted file
-set, a gate that actually runs, a named-hunt-class review, a guard for every
-third recurrence, and an evidence ledger *is* the quality engine. Parallelism is
-a separate axis. If your goal is fewer bugs rather than more throughput, adopt
-the discipline and ignore the trains.
+A lot of the value is available at N=1. A single stream with a predicted file
+set, a gate that actually runs, a review that names what it is hunting for, a
+guard for every third recurrence and an evidence ledger *is* the quality engine.
+Parallelism is a separate axis entirely. If your goal is fewer bugs rather than
+more throughput, take the discipline and ignore the trains. There is a section
+on exactly that in [docs/ADOPTING.md](docs/ADOPTING.md#scaling-it-down).
 
 ---
 
-## What a train is
+## What your repo needs first
 
-A batch of work, decomposed into **streams**. Each stream:
+Four things, and `init` checks all of them before it will write a config.
 
-- runs in its own git worktree on its own branch,
-- verifies its base commit before touching anything,
-- builds one predictable slice,
-- proves its own new tests can fail, then runs the full gate itself,
-- returns a ~40-line report, not a diff.
+1. **A gate that runs.** One command that lints, type-checks and tests. It must
+  be *executed* during onboarding, never read off a `package.json` or Makefile
+  and assumed. A gate can be written and never have worked: one adoption found
+  a task runner that had been exiting non-zero on a workspace-resolution error
+  since the day it was added, with 1,116 real tests sitting unreachable from the
+  build graph. Underneath that was a second defect where the runner stripped
+  environment variables, so a test-isolation seam that had been proved by hand
+  would silently not have worked under the gate.
 
-An **integrator** decomposes, dispatches, integrates and ships. It never builds
-and never writes prose that could be a template. It merges green streams onto a
-train branch, regenerates anything generated, runs the gate **once** on the
-merged result, then ships once.
+2. **A green baseline.** A red gate on arrival trains everyone to re-run until
+  green and drowns every real signal after it.
 
-Review runs **per stream, concurrently**, and is adversarial only — it never
-re-runs a suite the stream already ran green.
+3. **Test isolation, or a plan for it.** Each concurrent stream needs its own
+  database, port, or namespace. Check whether your CI already parameterises
+  this. In one adoption the seam turned out to need zero source changes, because
+  CI had been running the same suite against different infrastructure via
+  environment variables for months.
 
-The train ends with a retro that classifies every lesson into exactly one
-destination, which is what stops the method forking per repo.
+4. **A clean tree.** No uncommitted work, no in-flight branches. Changing
+  integration model on top of in-flight work is how repos end up with eight
+  long-lived branches nobody can merge.
+
+---
+
+## Installing
+
+Copy the skill into your Claude Code skills directory:
+
+```bash
+# user level, available in every repo
+cp -r skills/train ~/.claude/skills/
+
+# or project level, for one repo only
+cp -r skills/train /path/to/repo/.claude/skills/
+```
+
+User level is recommended and deliberate. One copy of the method means it cannot
+quietly fork per repository, which is the failure this design is most concerned
+with. Everything repo-specific lives in that repo's `.train/` directory instead.
+
+---
+
+## The three commands
+
+```
+/train init onboard or retrain a repo, measuring its substrate first
+/train run a train
+/train retro fold the finished train's lessons back
+```
+
+**`/train init`** runs Freeze, Diagnose and Prescribe, then stops. It produces a
+measured baseline and a `.train/config.md`. Its diagnostic step is not
+skippable, and this is the most important thing in the whole method: an agent
+handed a method without measuring its own baseline complies superficially and
+drifts back within a week. An agent that measured its own eighteen-minute serial
+review against three-minute builds, and saw that the bottleneck was itself, owns
+the problem. That difference costs about an hour.
+
+**`/train`** runs one train: measure, decompose, dispatch, verify, integrate,
+ship, report.
+
+**`/train retro`** classifies every lesson from the train into exactly one
+destination, appends the priors, and reports the method's own change rate.
+
+---
+
+## What a train actually looks like
+
+Concretely, from a manifest of six items.
+
+**Measure.** Re-derive the hotspots from `git log` rather than reading a stored
+list. Confirm the tree is clean and nothing is in flight. Read the config for
+what cannot be derived: the gate command, isolation mechanism, migration system,
+deploy invocation.
+
+**Decompose.** Write a manifest: per item, the predicted file set, which hotspots
+it claims, its migration slot, its dependencies. Two items touching the same
+hotspot go in the *same* train, dispatched one after the other. Anything adding
+an enforcement mechanism goes first and the rest branch off its merge. Anything
+whose file set is unknowable becomes a read-only investigation instead. Then walk
+the manifest yourself before dispatching: does every predicted file exist, does
+every acceptance criterion name both the mutation and the failure it must
+produce, is every figure a median of at least five runs.
+
+**Dispatch.** Each stream gets its own worktree, a branch off the current train
+head, a declared base sha it must assert before touching anything, its own
+database port, and the lines from priors relevant to its risk surface. Every
+input you will need from a human is requested now, in one batch, never
+discovered mid-build.
+
+**Stream exit.** The stream reverts each of its own fixes in turn, pastes its new
+tests going red, and restores. Then it runs the full gate once, in its worktree,
+against its own database. It returns a report capped at about forty lines: shas,
+file list, gate output pasted, the pre-ship questions answered, the live evidence
+that will prove it after deploy, anything it could not verify, and its claim
+ledger. The bulk evidence goes to a gitignored file in the worktree.
+
+**Review.** One reviewer per stream, spawned when that stream finishes, running
+while others are still building. It does not re-run the green suite. It walks the
+classes it declared it would hunt, replays the mutation proofs, checks that tests
+fail for the reason claimed rather than merely failing, and rehearses any data
+migration by executing it against a scratch database.
+
+**Integrate.** Fast-forward each green stream onto the train branch in dependency
+order. Never hand-resolve a source conflict; the losing stream rebases and
+re-runs its own gate. Regenerate anything generated. Run the full gate once on
+the merged result, because green-alone proves nothing about the train. Hunt
+pairwise semantic conflicts explicitly. If the integrated gate goes red with no
+obvious culprit, bisect by dropping streams rather than guessing.
+
+**Ship and tear down.** One push, one CI run, one deploy. Remove every worktree,
+delete every branch, and assert the counts by command with the output pasted.
+Then report, then retro.
 
 ---
 
@@ -94,77 +212,135 @@ Mixing these is how the method rots.
 
 | Layer | Lives in | Changes |
 |---|---|---|
-| **Method** | the skill | Rarely. Identical in every repo. Divergence is debt. |
-| **Substrate** | `.train/config.md` | When the repo's infrastructure moves. Only facts that *cannot be derived* — everything derivable is re-measured every train, because a stored fact is recall and recall goes stale silently. |
-| **Priors** | shared store + `.train/priors.md` | Every retro. Accumulated failure classes and calibration. |
+| **Method** | the skill | Rarely. Identical in every repo. Divergence between repos is debt, not diversity. |
+| **Substrate** | `.train/config.md` | When the repo's infrastructure moves. Only facts that cannot be derived, because a stored fact is recall and recall goes stale silently. |
+| **Priors** | shared store plus `.train/priors.md` | Every retro. Accumulated failure classes and calibration data. |
 
 A new agent on a repo inherits the method, reads the config, and starts at the
 priors' current competence rather than at zero. That is the compounding
-mechanism, and it is the whole point.
+mechanism and it is the entire point of keeping the layers apart.
 
 ---
 
-## Using it
+## Files it creates
 
 ```
-/train init     # onboard or retrain a repo — measures its substrate first
-/train          # run a train
-/train retro    # fold the finished train's lessons back
+.train/
+  config.md substrate facts, written by init, re-read every train
+  priors.md failure classes and calibration, appended by every retro
 ```
 
-`init` is not optional and its diagnostic step is not skippable. An agent handed
-a method without measuring its own baseline complies superficially and drifts
-back within a week; an agent that measured its own bottleneck owns it.
+Both are committed. Neither is large: a config runs to a couple of hundred lines
+and a priors file grows by a handful of lines per train.
 
-Full adoption sequence: [docs/ADOPTING.md](docs/ADOPTING.md).
-Vocabulary and rationale: [docs/CONCEPTS.md](docs/CONCEPTS.md).
-The failure shapes it guards against: [docs/PATTERNS.md](docs/PATTERNS.md).
+Your contributor guide gets exactly one line added, saying that every batch of
+work runs a train. The method body stays in the skill so the guide does not
+bloat.
 
 ---
 
 ## Honest expectations
 
-From roughly fourteen trains across two repositories:
+Drawn from roughly fourteen trains across two repositories.
 
-- **Your first train will produce ~10 changes to the method itself.** By the
-  sixth it should produce zero to one. That decline is the readiness signal —
-  do not roll the method to a second repository until it flattens, or you are
-  propagating a draft. Spikes after zero are normal and almost always come from
-  newly-exercised surface: a rule fires for the first time and turns out to be
-  under-specified.
+**Your first train will produce about ten changes to the method itself.** By the
+sixth it should produce zero or one. That decline is the readiness signal, and it
+is the gate for rolling the method to a second repository: do it before the rate
+flattens and you are propagating a draft. Spikes back to one after a zero are
+normal and nearly always come from newly-exercised surface, where a rule fires
+for the first time and turns out to be under-specified. That is the method
+working rather than decaying, and it is worth saying so out loud rather than
+letting the number be flattered.
 
-- **Sharply-briefed streams are much faster than intuition predicts.** Same
-  codebase, same model: 37–75 minutes unbriefed against 3–13 minutes with a
-  goal, acceptance evidence and a predicted file set. The predicted file set is
-  what bounds exploration.
+**Sharply-briefed streams are much faster than intuition predicts.** Same
+codebase, same model tier: 37 to 75 minutes unbriefed, against 3 to 13 minutes
+with a goal, acceptance evidence and a predicted file set. The predicted file set
+is doing most of that work, because it bounds exploration.
 
-- **The bottleneck migrates, and that is the shape of the work.** Shared tree →
-  fix with worktrees → review becomes the longest pole → parallelise it →
-  *the orchestrator* becomes the constraint, because it is reading reports and
-  writing briefs. Each fix is real and each exposes the next. Budget for it
-  rather than reading it as the previous fix having failed.
+**The bottleneck migrates, and that is the shape of the work.** Shared tree, so
+you fix it with worktrees. Then review becomes the longest pole, so you
+parallelise it. Then the orchestrator becomes the constraint, because it is
+reading reports and writing briefs. Each fix is real and each exposes the next
+one. Budget for the migration rather than reading it as the previous fix having
+failed.
 
-- **The orchestrator's context, not your infrastructure, is the first ceiling.**
-  Capping stream reports and widening trains buys more than adding hardware.
+**The orchestrator's context, not your infrastructure, is the first ceiling.**
+Capping stream reports and widening trains buys more than adding hardware does.
 
-- **Two metrics matter and they measure different things.** *Brief gaps* count
-  what a brief failed to name (omission). *Capacity burned* counts what it named
-  wrongly (commission). Watching only the first will read as solved while the
-  second runs unmeasured. Green-first-time tracks work difficulty, not process
-  health — do not chase it upward.
+**Two metrics matter and they measure different things.** Brief gaps count what a
+brief failed to name, which is omission. Capacity burned counts what it named
+wrongly, which is commission. Watching only the first will read as solved while
+the second runs unmeasured, and that happened here for three consecutive trains.
+Green-first-time tracks work difficulty rather than process health, so do not
+chase it upward.
+
+**Rework across trains should sit at zero.** If it does not, the gate is the
+problem, not the parallelism.
+
+---
+
+## Objections you will have
+
+**"This is a lot of process for an agent."** Most of it costs seconds and runs
+once. The manifest walk is three commands. The mutation proof is a revert and a
+restore in a worktree you already have. The expensive parts of the method are the
+parts that replaced something more expensive: a review that replays proofs is
+cheaper than one that discovers them.
+
+**"My agent already writes tests."** So did these. One train measured tests that
+could not fail as its dominant defect class: nine or more instances across seven
+streams. A test written alongside its fix and never proven red is decoration that
+reads as coverage. That single change, moving mutation proof to build time, is
+probably the highest value-per-adoption-cost item in the method and it needs no
+worktrees, no parallelism and no orchestrator.
+
+**"Why not just open a pull request per stream?"** Because it depends entirely on
+your runners, which is why that fact lives in the substrate layer rather than the
+method. On a single self-hosted runner, five parallel branches meant roughly 34
+minutes of queue for the fifth, so PRs created a bottleneck where none existed.
+On elastic hosted runners the constraint disappears and PRs are affordable again.
+Measure yours.
+
+**"We are too small for this."** Then run it at one or two streams and drop the
+ceremony. The bug-reduction half of the method is independent of the parallelism
+half. One repo measured 13% of its entire recorded bug history as self-inflicted
+by agent-process machinery rather than by the product, so cutting ceremony there
+removed a measurable source of bugs rather than being a compromise.
+
+**"Our agent is reliable, we do not need an evidence protocol."** Two figures in
+one repo's first diagnostic were wrong when independently checked, and that
+diagnostic was otherwise excellent work. The protocol is not an accusation; it is
+what makes good work checkable, and the same agent later caught three of its own
+false findings before reporting them.
 
 ---
 
 ## What it is not
 
-It is not a merge queue, and it does not replace CI. On a single self-hosted
-runner, opening a pull request per stream *creates* a queue where none existed —
-one adoption measured five parallel branches as ~34 minutes of wait for the
-fifth. Streams prove themselves locally; the integrated result is what CI sees.
-If your runners are elastic, that constraint disappears and PRs are affordable
-again. This is exactly the kind of fact the substrate layer exists to hold.
+**It is not a merge queue and it does not replace CI.** Streams prove themselves
+locally and the integrated result is what CI sees. If you already run a merge
+queue with speculative batching, you have solved the integration half and should
+take the verification half only.
 
-It also has nothing to say about work whose *shape* is not yet known. Train
-executes; it does not chart. If the question cannot be stated precisely yet, no
-stream should be dispatched to find out — that is a planning problem and wants a
-planning method.
+**It has nothing to say about work whose shape is not yet known.** Train
+executes; it does not chart. If a question cannot be stated precisely yet, no
+stream should be dispatched to find out. That is a planning problem and it wants
+a planning method, used before this one.
+
+**It is not a substitute for knowing your own codebase.** Every genuinely useful
+thing the method did in adoption came from measurement of that specific repo:
+which files are hotspots and why, what the test substrate actually shares, what
+its own bug history says its failure classes are. The method supplies the
+questions. Your repo supplies every answer, and borrowing another repo's answers
+is the one shortcut guaranteed not to work.
+
+---
+
+## Further reading
+
+- [docs/CONCEPTS.md](docs/CONCEPTS.md) - the vocabulary, and the failure behind
+  each rule.
+- [docs/ADOPTING.md](docs/ADOPTING.md) - the full onboarding sequence, the
+  readiness gate, and how to scale the method down.
+- [docs/PATTERNS.md](docs/PATTERNS.md) - the recurring failure shapes it guards
+  against, each with the evidence that produced it.

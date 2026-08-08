@@ -46,11 +46,11 @@ in practice.
 Two tests to apply to every lesson before filing it as PRIOR:
 
 1. **Would a different repo hit this?** If yes it is METHOD, however local the
-   evidence looks. A tooling behaviour, a mechanism the method depends on, or a
-   rule about a *class* of stream is never repo-local.
+  evidence looks. A tooling behaviour, a mechanism the method depends on, or a
+  rule about a *class* of stream is never repo-local.
 2. **Does the fix, as you wrote it, mention this repo?** If the wording is
-   already universal ("every stream brief carries…"), you have written a METHOD
-   change and filed it as a prior.
+  already universal ("every stream brief carries…"), you have written a METHOD
+  change and filed it as a prior.
 
 **Have the candidates classified blind by an actor that did not run the train** -
 hand it the raw lesson list with your own classification withheld until it
