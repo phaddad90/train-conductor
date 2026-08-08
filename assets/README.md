@@ -1,11 +1,13 @@
 # assets
 
-`social-card.html` renders the GitHub social preview image.
+`social-preview.png` (1280x640) is the GitHub social preview: the card rendered
+whenever the repo URL is pasted into X, LinkedIn, Slack, Discord or iMessage.
+`social-preview-alt.png` is a darker alternative with more empty space in the
+upper third, useful if a title is ever overlaid.
 
-To produce the PNG: open it in a browser at a 1280x640 viewport and screenshot,
-or run
+GitHub does not expose social preview via its API, so upload it manually at
+Settings > General > Social preview.
 
-    npx playwright screenshot --viewport-size=1280,640 assets/social-card.html assets/social-preview.png
+`social-card.html` is a text-based fallback card. Render it with:
 
-Then upload at Settings > General > Social preview. GitHub does not expose this
-via the API, so it is a manual upload.
+    npx playwright screenshot --viewport-size=1280,640 assets/social-card.html out.png
