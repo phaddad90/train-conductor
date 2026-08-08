@@ -2,68 +2,54 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body { width:1280px; height:640px; overflow:hidden; }
   body {
-    background:#0d1117;
+    background:#05070a url("social-preview.png") center/cover no-repeat;
     color:#e6edf3;
     font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-    display:flex; flex-direction:column; justify-content:center;
-    padding:0 64px;
     position:relative;
   }
-  .rails {
-    position:absolute; left:0; right:0; top:0; height:6px;
-    background:repeating-linear-gradient(90deg,#f78166 0 28px,transparent 28px 56px);
-    opacity:.55;
+  /* darken the lower half so type stays legible over the line-art */
+  .scrim {
+    position:absolute; inset:0;
+    background:linear-gradient(180deg,
+      rgba(5,7,10,0) 0%,
+      rgba(5,7,10,.35) 42%,
+      rgba(5,7,10,.92) 72%,
+      rgba(5,7,10,.98) 100%);
   }
-  pre.art {
-    font-size:15px; line-height:1.16; color:#7ee787;
-    white-space:pre; letter-spacing:0;
-    text-shadow:0 0 18px rgba(126,231,135,.22);
-    margin-bottom:34px;
+  .content {
+    position:absolute; left:64px; right:64px; bottom:54px;
   }
   h1 {
-    font-size:66px; font-weight:700; letter-spacing:-1.5px; color:#fff;
-    margin-bottom:16px;
+    font-size:62px; font-weight:700; letter-spacing:-1.5px; color:#fff;
+    margin-bottom:14px; text-shadow:0 2px 24px rgba(0,0,0,.8);
   }
-  h1 .slash { color:#8b949e; font-weight:400; }
+  h1 .owner { color:#8b949e; font-weight:400; }
   p.tag {
-    font-size:25px; line-height:1.4; color:#adbac7; max-width:1050px;
-    margin-bottom:26px;
+    font-size:24px; line-height:1.4; color:#c9d1d9; max-width:1010px;
+    margin-bottom:24px; text-shadow:0 2px 16px rgba(0,0,0,.9);
   }
   .chips { display:flex; gap:10px; flex-wrap:wrap; }
   .chip {
-    border:1px solid #30363d; border-radius:999px;
-    padding:7px 16px; font-size:16px; color:#8b949e; background:#161b22;
+    border:1px solid rgba(126,231,135,.28); border-radius:999px;
+    padding:7px 16px; font-size:16px; color:#8b949e;
+    background:rgba(13,17,23,.72); backdrop-filter:blur(2px);
   }
   .chip.on { color:#7ee787; border-color:#2ea043; }
-  .rails.bottom { top:auto; bottom:0; }
 </style>
 
-<div class="rails"></div>
+<div class="scrim"></div>
 
-<pre class="art">                    ( )     ( )
-                (  )    (  )    (  )
-              (    )   (    )   (    )
-                    \     |     /
-                     _|__|__|_
-                _____|__|   |__|_____
-           ____|                     |____      ______     ______     ______
-          |  _ |    |  o   o   o   o    |      |      |   |      |   |      |
-          | (_)|____|___________________|  [#] |===|  ..  |===|  ..  |===|  |
-          |____|_____|_______________|________|  |______|   |______|   |____|
-             (O)   (O)      (O)     (O)   (O)      (o)(o)     (o)(o)     (o)
-    =====================================================================</pre>
+<div class="content">
+  <h1><span class="owner">phaddad90/</span>train-conductor</h1>
 
-<h1>phaddad90<span class="slash">/</span>train-conductor</h1>
+  <p class="tag">Run multiple coding agents in parallel on one repository without
+  them colliding, and make what they tell you checkable.</p>
 
-<p class="tag">Run multiple coding agents in parallel on one repository without them
-colliding, and make what they tell you checkable.</p>
-
-<div class="chips">
-  <span class="chip on">Claude Code skill</span>
-  <span class="chip">worktree isolation</span>
-  <span class="chip">mutation proof at build time</span>
-  <span class="chip">evidence protocol</span>
-  <span class="chip">MIT</span>
+  <div class="chips">
+    <span class="chip on">Claude Code skill</span>
+    <span class="chip">worktree isolation</span>
+    <span class="chip">mutation proof at build time</span>
+    <span class="chip">evidence protocol</span>
+    <span class="chip">MIT</span>
+  </div>
 </div>
-
-<div class="rails bottom"></div>
