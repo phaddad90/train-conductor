@@ -73,6 +73,26 @@ The first repo to run trains is the reference implementation, and the method is
 provisional until its METHOD-change rate flattens. Say so plainly rather than
 declaring the method finished.
 
+## Read the telemetry, do not just append to it
+
+`.train/telemetry.tsv` gained a row at close-out. The retro's job is to read the
+COLUMN, not the row - a single train's numbers say almost nothing, and the
+trend is the whole point of keeping them machine-readable.
+
+Ask three things of the file every retro:
+
+1. **Which column moved, and does the story explain it?** A number that changed
+   without a reason in the lessons is either an unnoticed cause or a miscount.
+2. **Which column has been flat for five trains?** Flat is not automatically
+   dead - rework pinned at zero is the system working - but it must be named as
+   either a held invariant or a candidate for retirement.
+3. **Which column informed a decision this train?** Anything that cannot answer
+   within five trains is dropped, per §8. Say which you dropped and why.
+
+Promote from `extra` to the core only after a metric has informed a decision
+twice. Widening the core casually is how a readable row becomes a spreadsheet
+nobody opens.
+
 ## Measure the method, not just the work
 
 Append to `.train/priors.md` each train, so calibration accumulates:

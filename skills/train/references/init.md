@@ -162,6 +162,13 @@ stream branches push to origin: <yes/no>   # no, unless runners are elastic
 ## Deploy
 <exact invocation, gates, timing constraints>
 
+## Telemetry derivations
+<the two repo-specific commands §8's telemetry row needs:
+ 1. the CI/deploy query that yields wall-clock and CI duration for a train
+ 2. the token-accounting command over this agent runtime's transcripts for a
+    date window, yielding output and cache-creation totals
+ Everything else in the row derives from `git diff PREV..TIP` or is reported.>
+
 ## Operator-owned - hard stop, never auto-change
 <config the operator owns>
 ```

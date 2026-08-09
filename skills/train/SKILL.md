@@ -227,8 +227,11 @@ visible at manifest time, not discovered at review.
   requested at manifest time in one batched list.** Never discovered mid-build.
 - Hard stops; report and halt rather than work around: config-owned data the
   operator owns, a production write, a side-effectful external retry, the same
-  test failing three times, the file set exceeding predicted + 2, or **needing a
-  new dependency** - installed packages are near-always shared state (a symlinked
+  test failing three times, the file set exceeding predicted + 2, **running out
+  of working context** - stop honestly with a clean tree and an explicit list of
+  what remains (T14: two streams did exactly this and a fresh agent completed
+  each first try; a stream that pushes on with spent context ships unverifiable
+  work), or **needing a new dependency** - installed packages are near-always shared state (a symlinked
   virtualenv, a hoisted node_modules, a vendor dir), so one stream's install
   silently changes what every sibling's gate is testing against. Nothing fails;
   the results just stop meaning what they say.
@@ -393,6 +396,62 @@ nothing otherwise walks the integrator, and an integrator writing raw where a
 sanctioned endpoint exists silently skips whatever that endpoint also does
 (notifications, audit rows, cache invalidation). This list is the only place
 that class surfaces.
+
+### Telemetry - one machine-readable row per train
+
+The prose report above is for the operator reading THIS train. `.train/telemetry.tsv`
+is for anyone asking whether the method works across many. Prose does not
+aggregate, and hand-typed counts have been wrong in practice - append one
+tab-separated row at close-out, same moment as the teardown assertion.
+
+Header, and it does not change - a stable core is what makes a trend survive:
+
+```
+train  date  streams  green_first  brief_gaps  cap_burn  files_out  rework
+       method_own  method_ext  tripwires  wall_min  longest_min  tok_out
+       tok_cache_w  extra
+```
+
+**DERIVED - computed by command, never typed.** A number git or CI already holds
+is recall the moment you type it (A3). Define the train range as
+`<previous train tip>..<this train tip>`, then:
+
+```
+files_out    git diff --name-only PREV..TIP | wc -l      # vs predicted sets
+wall_min     first author-time in range -> deploy completion
+longest_min  slowest stream's dispatch -> its report
+tok_out      output tokens over the train's date window
+tok_cache_w  cache-creation tokens over the same window
+```
+
+Token accounting lives in the agent runtime's own transcripts; the path and the
+deploy-workflow name are repo-specific, so `.train/config.md` records the two
+commands that produce them. Cost is the first thing a sceptical adopter asks
+about and the easiest number to hand-wave, so it is derived or it is UNVERIFIED.
+
+**REPORTED - judgement, so each needs a written definition and a blind check.**
+`green_first` (streams needing no second round), `brief_gaps` (omission - a class
+the brief failed to name), `cap_burn` (commission - a factual error in the brief,
+caught by the premise check), `rework` (defects traceable to a prior train),
+`method_own` and `method_ext` (method changes from this train's discoveries
+versus contributed from outside - never merge these, the readiness gate depends
+on the split), `tripwires`, `blast_max`.
+
+**`extra` is free-form `key=value` pairs** and it is where a new metric lives
+while it proves itself. Never widen the core to trial something.
+
+### Retiring a metric
+
+**At every retro, each core column must name a decision it informed within the
+last five trains, or it is dropped.** A column in `extra` that informs a decision
+twice earns promotion to the core; one that never does is deleted without
+ceremony.
+
+This rule is not optional politeness. Readings that nobody acts on are exactly
+the process machinery this method exists to remove - one repo measured 13% of
+its entire recorded bug history as self-inflicted by agent-process overhead. A
+metric you have explicitly stopped chasing has to justify its row as context or
+lose it.
 
 Then run `/train retro`. A train that does not feed its lessons back is a train
 that will be run identically next time.
