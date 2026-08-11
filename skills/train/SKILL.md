@@ -210,6 +210,16 @@ visible at manifest time, not discovered at review.
 
 ## 3. Dispatch - every stream gets all of this or it does not launch
 
+- **Agent spawns are a consumable session resource - budget them.** A train
+  costs roughly 2N+ spawns (a carriage and a walker per stream, plus ratchet,
+  classifier and content roles), and runtimes cap spawns per SESSION
+  cumulatively, not concurrently. Reaping idle agents does not help: the counter
+  counts spawns, never live agents. `.train/config.md` records the cap and the
+  observed per-train cost; when a session's remaining budget is under two trains'
+  worth, start a fresh session rather than degrading mid-train.
+  **Prefer resuming a finished agent over spawning a fresh one** for repeat roles
+  - a walker already matched to a surface has performed as well or better than a
+  new spawn. Never force a context-exhausted agent; retire it and start one.
 - Its own git worktree and a local branch off the current train head. Never the
   shared tree. Never a push to origin unless config says otherwise.
 - **Verifying the base is the stream's FIRST act, before any edit.** Worktree
@@ -333,6 +343,13 @@ line is the enforcement and `.train/config.md` names the path.
   a delta - never a "smalls" round that lands unwalked.
 - If a QA walk exceeds its stream's build time, say so in the train report: the
   walk is doing work the gate should own.
+- **At-cap protocol, and it must be declared.** Out of spawn budget: first resume
+  a finished walker for a bounded delta it already owns; only as a last resort
+  does the integrator walk inline. An inline walk is DEGRADED review - the same
+  party that dispatched the work is now judging it, which is the independence the
+  method exists to preserve - so the report names every stream walked inline
+  rather than letting it count as a proper walk. A silently degraded walk is
+  worse than a skipped one, because it still reads as reviewed.
 
 ## 6. Integrate - the integrator's only build-adjacent job
 
@@ -407,9 +424,9 @@ tab-separated row at close-out, same moment as the teardown assertion.
 Header, and it does not change - a stable core is what makes a trend survive:
 
 ```
-train  date  streams  green_first  brief_gaps  cap_burn  files_out  rework
-       method_own  method_ext  tripwires  wall_min  longest_min  tok_out
-       tok_cache_w  extra
+train  date  streams  spawns  walked_inline  green_first  brief_gaps
+       cap_burn  files_out  rework  method_own  method_ext  tripwires  wall_min
+       longest_min  tok_out  tok_cache_w  extra
 ```
 
 **DERIVED - computed by command, never typed.** A number git or CI already holds
@@ -422,6 +439,7 @@ wall_min     first author-time in range -> deploy completion
 longest_min  slowest stream's dispatch -> its report
 tok_out      output tokens over the train's date window
 tok_cache_w  cache-creation tokens over the same window
+spawns       agents spawned this train, against the session cap
 ```
 
 Token accounting lives in the agent runtime's own transcripts; the path and the

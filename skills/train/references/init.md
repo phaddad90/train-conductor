@@ -162,6 +162,10 @@ stream branches push to origin: <yes/no>   # no, unless runners are elastic
 ## Deploy
 <exact invocation, gates, timing constraints>
 
+## Agent spawn budget
+<runtime cap per session, observed spawns per train, and the remaining-budget
+ threshold at which a fresh session starts rather than degrading mid-train>
+
 ## Telemetry derivations
 <the two repo-specific commands §8's telemetry row needs:
  1. the CI/deploy query that yields wall-clock and CI duration for a train
@@ -193,6 +197,6 @@ the repo's CLAUDE.md as one line** ("every batch of work runs `/train`"), and
 the method body stays in the skill. Add nothing else to CLAUDE.md; the config
 and priors carry the detail.
 
-Seed `.train/priors.md` from the shared store's cross-repo notes before the
+Seed `.train/priors.md` from the shared knowledge store's cross-repo notes before the
 first real train, so a new agent starts at the ecosystem's current competence
 rather than at zero.
