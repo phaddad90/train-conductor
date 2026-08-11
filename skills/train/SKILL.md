@@ -220,6 +220,13 @@ visible at manifest time, not discovered at review.
   **Prefer resuming a finished agent over spawning a fresh one** for repeat roles
   - a walker already matched to a surface has performed as well or better than a
   new spawn. Never force a context-exhausted agent; retire it and start one.
+  **Resuming spends the agent's context instead of the spawn odometer** - the two
+  are currencies for the same purchase, and a resume economy that works perfectly
+  hides the exhaustion until it fails all at once. Six consecutive trains ran on
+  zero fresh spawns and then walked into a wall with no warning.
+  **The runtime cap is a runaway backstop, never the budget.** Set it high enough
+  that it cannot bind, and do the budgeting in config where it is visible and
+  measured. A ceiling you are steering by is a ceiling that will surprise you.
 - Its own git worktree and a local branch off the current train head. Never the
   shared tree. Never a push to origin unless config says otherwise.
 - **Verifying the base is the stream's FIRST act, before any edit.** Worktree
@@ -282,6 +289,13 @@ line is the enforcement and `.train/config.md` names the path.
 - **Spawned by that stream's completion**, not batched by the integrator. QA
   for a finished stream runs while other streams are still building. Each QA
   instance holds its own test substrate handle.
+  **Walkers dominate the spawn bill** - typically 9-11 of a ~15-spawn train. When
+  budget is tight, one walker may take several streams SEQUENTIALLY: independence
+  survives, because a walker is independent of the builders whichever streams it
+  takes, and only concurrency is lost. That is usually cheap, since walks run
+  under build time. Declare it when you do it, and retire the walker before its
+  context degrades - a walker on its fourth stream is not the walker that did the
+  first. Never consolidate a walker across a stream it built.
 - Does NOT re-run a suite the stream already ran green. That is duplicated
   compute and a collision risk.
 - **The QA brief NAMES its hunt classes**, derived at brief-generation time from
