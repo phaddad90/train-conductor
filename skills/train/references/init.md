@@ -123,7 +123,7 @@ if a `git log` one-liner produces it, it does not go in the file.
 # .train/config.md - substrate facts for <repo>
 Diagnosed <date>. Re-run `/train init` when CI, test harness or deploy changes.
 
-## Gate - EXECUTED during diagnosis, never read off package.json/Makefile
+## Gate  — EXECUTED during diagnosis, never read off package.json/Makefile
 exact-command-here            # the one the stream runs; must match CI's invocation
 lint: ...
 baseline: <pass/fail counts, pasted from the actual run>
@@ -197,6 +197,6 @@ the repo's CLAUDE.md as one line** ("every batch of work runs `/train`"), and
 the method body stays in the skill. Add nothing else to CLAUDE.md; the config
 and priors carry the detail.
 
-Seed `.train/priors.md` from the shared knowledge store's cross-repo notes before the
+Seed `.train/priors.md` from the Second Brain's cross-repo notes before the
 first real train, so a new agent starts at the ecosystem's current competence
 rather than at zero.
